@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UHURU v2 — Schémas d'Architecture</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&family=Dm+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #060a14;
+  --bg1: #0c1220;
+  --bg2: #111a2e;
+  --bg3: #162236;
+  --accent: #00e5ff;
+  --accent-d: #00b8d0;
+  --purple: #a78bfa;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --sky: #38bdf8;
+  --text: #cbd5e1;
+  --text-hi: #f1f5f9;
+  --text-lo: #475569;
+  --border: #1e2d4a;
+  --border-hi: #2a3f6a;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Dm Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;overflow-x:hidden}
+
+/* ──── GRID NOISE OVERLAY ──── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg stroke='%232a3f6a' stroke-width='0.4'%3E%3Cpath d='M60 0v60H0V0h60zm-1 1H1v58h58V1z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity:.15;pointer-events:none;z-index:0;
+}
+
+/* ──── HERO ──── */
+.hero{
+  position:relative;z-index:1;
+  padding:90px 32px 70px;text-align:center;
+  background:linear-gradient(180deg,#0a1628 0%,var(--bg) 100%);
+  overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;
+  top:-100px;left:50%;transform:translateX(-50%);
+  width:900px;height:600px;
+  background:radial-gradient(ellipse,rgba(0,229,255,.07) 0%,transparent 65%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid rgba(0,229,255,.25);
+  color:var(--accent);font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:2.5px;text-transform:uppercase;
+  padding:6px 18px;border-radius:30px;margin-bottom:28px;
+  background:rgba(0,229,255,.05);
+  position:relative;z-index:1;
+}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.2}}
+
+.hero h1{
+  font-family:'Syne',sans-serif;font-size:72px;font-weight:800;
+  letter-spacing:-4px;line-height:1;
+  background:linear-gradient(135deg,#00e5ff 0%,#a78bfa 40%,#f472b6 70%,#00e5ff 100%);
+  background-size:200% 200%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:grad 6s ease infinite;
+  position:relative;z-index:1;margin-bottom:10px;
+}
+@keyframes grad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+.hero-sub{font-size:14px;color:var(--text-lo);font-weight:300;max-width:680px;margin:0 auto;position:relative;z-index:1;line-height:1.8}
+.hero-tags{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:28px;position:relative;z-index:1}
+.htag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 12px;border-radius:20px;border:1px solid var(--border-hi);color:var(--text-lo);background:rgba(255,255,255,.02)}
+.htag span{margin-right:5px}
+
+/* ──── CONTAINER ──── */
+.wrap{max-width:1400px;margin:0 auto;padding:0 36px 100px;position:relative;z-index:1}
+
+/* ──── SECTION HEADER ──── */
+.sh{display:flex;align-items:center;gap:14px;margin:64px 0 24px}
+.sh:first-child{margin-top:0}
+.sh-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.18);padding:3px 10px;border-radius:4px}
+.sh h2{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;color:var(--text-hi)}
+.sh-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+.sh-sub{font-size:12px;color:var(--text-lo);margin-top:-16px;margin-bottom:24px;padding-left:58px}
+
+/* ──── DIAGRAM CONTAINERS ──── */
+.diagram-container {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 30px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.diagram-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 80%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ──── ARCHITECTURE DIAGRAMS ──── */
+.arch-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.arch-layer {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.arch-layer:hover {
+  border-color: var(--border-hi);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(5px);
+}
+
+.layer-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layer-label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.layer-content {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.layer-node {
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.layer-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.15);
+}
+
+/* ──── FLOW DIAGRAMS ──── */
+.flow-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 25px 0;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+.step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-hi);
+  margin-bottom: 5px;
+}
+
+.step-desc {
+  font-size: 11.5px;
+  color: var(--text-lo);
+  line-height: 1.6;
+}
+
+/* ──── MICROSERVICES GRID ──── */
+.ms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin: 25px 0;
+}
+
+.ms-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ms-card:hover {
+  border-color: var(--border-hi);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.ms-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.ms-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.ms-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.ms-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-hi);
+}
+
+.ms-responsibilities {
+  margin-top: 15px;
+}
+
+.resp-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  color: var(--text-lo);
+}
+
+.resp-item::before {
+  content: '→';
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* ──── SECURITY LAYERS ──── */
+.security-layers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin: 25px 0;
+}
+
+.security-layer {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.security-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.security-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-hi);
+  margin-bottom: 8px;
+}
+
+.security-desc {
+  font-size: 11px;
+  color: var(--text-lo);
+  line-height: 1.5;
+}
+
+/* ──── DATA FLOW DIAGRAM ──── */
+.data-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 30px 0;
+}
+
+.flow-stage {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: -1px;
+  position: relative;
+}
+
+.flow-stage::after {
+  content: '↓';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-lo);
+  font-size: 18px;
+  z-index: 2;
+}
+
+.flow-stage:last-child::after {
+  display: none;
+}
+
+.stage-number {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+
+.stage-content {
+  flex: 1;
+}
+
+.stage-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-hi);
+  margin-bottom: 5px;
+}
+
+.stage-details {
+  font-size: 11.5px;
+  color: var(--text-lo);
+  line-height: 1.6;
+}
+
+/* ──── COMPONENT DIAGRAM ──── */
+.component-diagram {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.component {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.component:hover {
+  border-color: var(--border-hi);
+  transform: translateY(-3px);
+}
+
+.comp-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.comp-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-hi);
+  margin-bottom: 5px;
+}
+
+.comp-role {
+  font-size: 10px;
+  color: var(--text-lo);
+  line-height: 1.4;
+}
+
+/* ──── NETWORK TOPOLOGY ──── */
+.network-topology {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.network-layer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.network-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 120px;
+}
+
+.network-components {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.network-component {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+/* ──── RESPONSIVE ──── */
+@media (max-width: 1200px) {
+  .ms-grid,
+  .security-layers,
+  .component-diagram {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    padding: 0 20px 60px;
+  }
+  
+  .hero {
+    padding: 60px 20px 40px;
+  }
+  
+  .hero h1 {
+    font-size: 42px;
+  }
+  
+  .ms-grid,
+  .security-layers,
+  .component-diagram {
+    grid-template-columns: 1fr;
+  }
+  
+  .arch-layer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .layer-label {
+    min-width: auto;
+  }
+}
+
+/* ──── ANIMATIONS ──── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ──── COLOR SCHEMES ──── */
+.user-color { background: rgba(0, 229, 255, 0.1); border-color: rgba(0, 229, 255, 0.3); }
+.chat-color { background: rgba(244, 114, 182, 0.1); border-color: rgba(244, 114, 182, 0.3); }
+.channel-color { background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); }
+.stories-color { background: rgba(251, 146, 60, 0.1); border-color: rgba(251, 146, 60, 0.3); }
+.kafka-color { background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.3); }
+.redis-color { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); }
+.mongo-color { background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); }
+.security-color { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <div class="hero-badge"><div class="dot"></div> Schémas d'Architecture — v2</div>
+  <h1>UHURU v2</h1>
+  <p class="hero-sub">Visualisation complète de l'architecture microservices, des flux de données, et des composants sécurité.</p>
+  <div class="hero-tags">
+    <div class="htag"><span style="color:var(--accent)">●</span> Architecture 8 Couches</div>
+    <div class="htag"><span style="color:var(--pink)">●</span> 4 Microservices Principaux</div>
+    <div class="htag"><span style="color:var(--red)">●</span> Signal Protocol E2E</div>
+    <div class="htag"><span style="color:var(--green)">●</span> Zero Trust Security</div>
+    <div class="htag"><span style="color:var(--purple)">●</span> DigitalOcean VPC</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ═══ 01. ARCHITECTURE 8 COUCHES ═══ -->
+<div class="sh"><span class="sh-n">01</span><h2>Architecture en 8 Couches</h2><div class="sh-line"></div></div>
+<p class="sh-sub">Chaque couche isolée dans son propre subnet VPC avec sécurité Zero Trust.</p>
+
+<div class="diagram-container">
+  <div class="arch-diagram">
+    
+    <!-- Couche 1: Clients -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--accent)">
+        <div style="width:8px;height:8px;background:var(--accent);border-radius:50%;"></div>
+        Clients
+      </div>
+      <div class="layer-content">
+        <div class="layer-node user-color">📱 Flutter Android</div>
+        <div class="layer-node user-color">📱 Flutter iOS</div>
+        <div class="layer-node user-color">🌐 Web Clients</div>
+      </div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="text-align:center;color:var(--text-lo);font-size:12px;padding:5px 0;">
+      ↓ TLS 1.3 · Certificate Pinning · DDoS Protection
+    </div>
+    
+    <!-- Couche 2: Edge -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--amber)">
+        <div style="width:8px;height:8px;background:var(--amber);border-radius:50%;"></div>
+        Couche Edge
+      </div>
+      <div class="layer-content">
+        <div class="layer-node security-color">🛡️ Cloudflare WAF</div>
+        <div class="layer-node security-color">🔁 Load Balancer L7</div>
+        <div class="layer-node security-color">🔒 SSL Termination</div>
+      </div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="text-align:center;color:var(--text-lo);font-size:12px;padding:5px 0;">
+      ↓ VPC Subnet Isolation · Firewall Rules
+    </div>
+    
+    <!-- Couche 3: API Gateway -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--purple)">
+        <div style="width:8px;height:8px;background:var(--purple);border-radius:50%;"></div>
+        Gateway & WebSocket
+      </div>
+      <div class="layer-content">
+        <div class="layer-node chat-color">🔐 Auth Gateway</div>
+        <div class="layer-node chat-color">⚡ FastAPI Gateway</div>
+        <div class="layer-node chat-color">🔄 WebSocket Server</div>
+        <div class="layer-node redis-color">🔴 Redis Cache</div>
+      </div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="text-align:center;color:var(--text-lo);font-size:12px;padding:5px 0;">
+      ↓ mTLS Inter-Service · SPIFFE Identities
+    </div>
+    
+    <!-- Couche 4: Microservices -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--pink)">
+        <div style="width:8px;height:8px;background:var(--pink);border-radius:50%;"></div>
+        Microservices
+      </div>
+      <div class="layer-content">
+        <div class="layer-node user-color">👤 User Service</div>
+        <div class="layer-node chat-color">💬 Chat Service</div>
+        <div class="layer-node channel-color">📢 Channel Service</div>
+        <div class="layer-node stories-color">📸 Stories Service</div>
+      </div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="text-align:center;color:var(--text-lo);font-size:12px;padding:5px 0;">
+      ↓ Kafka Events · Redis Pub/Sub
+    </div>
+    
+    <!-- Couche 5: Messaging -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--green)">
+        <div style="width:8px;height:8px;background:var(--green);border-radius:50%;"></div>
+        Event Bus
+      </div>
+      <div class="layer-content">
+        <div class="layer-node kafka-color">📨 Kafka Cluster</div>
+        <div class="layer-node redis-color">🔴 Redis Pub/Sub</div>
+        <div class="layer-node security-color">⚠️ Dead Letter Queue</div>
+      </div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="text-align:center;color:var(--text-lo);font-size:12px;padding:5px 0;">
+      ↓ Database per Service · Data Replication
+    </div>
+    
+    <!-- Couche 6: Data -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--red)">
+        <div style="width:8px;height:8px;background:var(--red);border-radius:50%;"></div>
+        Persistence
+      </div>
+      <div class="layer-content">
+        <div class="layer-node mongo-color">🍃 MongoDB User</div>
+        <div class="layer-node mongo-color">🍃 MongoDB Chat</div>
+        <div class="layer-node mongo-color">🍃 MongoDB Channel</div>
+        <div class="layer-node mongo-color">🍃 MongoDB Stories</div>
+        <div class="layer-node redis-color">🔴 Redis Cluster</div>
+      </div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="text-align:center;color:var(--text-lo);font-size:12px;padding:5px 0;">
+      ↓ Monitoring · Logging · Tracing
+    </div>
+    
+    <!-- Couche 7: Observability -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--sky)">
+        <div style="width:8px;height:8px;background:var(--sky);border-radius:50%;"></div>
+        Observability
+      </div>
+      <div class="layer-content">
+        <div class="layer-node security-color">📊 Prometheus</div>
+        <div class="layer-node security-color">📈 Grafana</div>
+        <div class="layer-node security-color">🔍 Jaeger</div>
+        <div class="layer-node security-color">📝 ELK Stack</div>
+      </div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="text-align:center;color:var(--text-lo);font-size:12px;padding:5px 0;">
+      ↓ Infrastructure as Code
+    </div>
+    
+    <!-- Couche 8: Infrastructure -->
+    <div class="arch-layer">
+      <div class="layer-label" style="color:var(--orange)">
+        <div style="width:8px;height:8px;background:var(--orange);border-radius:50%;"></div>
+        Infrastructure
+      </div>
+      <div class="layer-content">
+        <div class="layer-node user-color">🌊 DigitalOcean VPC</div>
+        <div class="layer-node user-color">🐳 Kubernetes</div>
+        <div class="layer-node user-color">🔐 Certificate Manager</div>
+        <div class="layer-node user-color">💾 Spaces S3</div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- ═══ 02. MICROSERVICES PRINCIPAUX ═══ -->
+<div class="sh"><span class="sh-n">02</span><h2>4 Microservices Principaux</h2><div class="sh-line"></div></div>
+<p class="sh-sub">Chaque service avec des responsabilités bien définies et isolation de données.</p>
+
+<div class="ms-grid">
+  
+  <!-- User Service -->
+  <div class="ms-card">
+    <div class="ms-header">
+      <div class="ms-icon user-color">👤</div>
+      <div class="ms-title">User Service</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-lo);margin-bottom:15px">
+      Gestion des identités, authentification, profils et contacts
+    </div>
+    <div class="ms-responsibilities">
+      <div class="resp-item">Authentification JWT avec rotation 15min</div>
+      <div class="resp-item">MFA TOTP et adaptive authentication</div>
+      <div class="resp-item">Gestion du graphe social (contacts, blocages)</div>
+      <div class="resp-item">Device fingerprinting et gestion sessions</div>
+      <div class="resp-item">KYC et compliance GDPR</div>
+    </div>
+    <div style="margin-top:15px;padding-top:15px;border-top:1px solid var(--border);">
+      <div style="font-size:10px;color:var(--text-lo);font-family:'JetBrains Mono',monospace">
+        📦 MongoDB ReplicaSet · 🔐 SPIFFE Identity · ⚡ FastAPI
+      </div>
+    </div>
+  </div>
+  
+  <!-- Chat Service -->
+  <div class="ms-card">
+    <div class="ms-header">
+      <div class="ms-icon chat-color">💬</div>
+      <div class="ms-title">Chat Service</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-lo);margin-bottom:15px">
+      Messages privés avec chiffrement E2E Signal Protocol
+    </div>
+    <div class="ms-responsibilities">
+      <div class="resp-item">Signal Protocol E2E implementation</div>
+      <div class="resp-item">Stockage des messages chiffrés</div>
+      <div class="resp-item">Gestion des clés Signal (PreKeys, Identity Keys)</div>
+      <div class="resp-item">Media upload et chiffrement at-rest</div>
+      <div class="resp-item">Double Ratchet algorithm</div>
+    </div>
+    <div style="margin-top:15px;padding-top:15px;border-top:1px solid var(--border);">
+      <div style="font-size:10px;color:var(--text-lo);font-family:'JetBrains Mono',monospace">
+        📦 MongoDB ReplicaSet · 📨 Kafka Events · 🔐 Signal Protocol
+      </div>
+    </div>
+  </div>
+  
+  <!-- Channel Service -->
+  <div class="ms-card">
+    <div class="ms-header">
+      <div class="ms-icon channel-color">📢</div>
+      <div class="ms-title">Channel Service</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-lo);margin-bottom:15px">
+      Groupes de discussion, permissions et modération
+    </div>
+    <div class="ms-responsibilities">
+      <div class="resp-item">RBAC granulaire (owner, admin, mod, member)</div>
+      <div class="resp-item">Système d'invitation avec codes QR</div>
+      <div class="resp-item">Modération automatique et manuelle</div>
+      <div class="resp-item">Gestion des permissions par channel</div>
+      <div class="resp-item">Slow mode, mentions, notifications</div>
+    </div>
+    <div style="margin-top:15px;padding-top:15px;border-top:1px solid var(--border);">
+      <div style="font-size:10px;color:var(--text-lo);font-family:'JetBrains Mono',monospace">
+        📦 MongoDB ReplicaSet · 📨 Kafka Events · ⚖️ OPA Policies
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stories Service -->
+  <div class="ms-card">
+    <div class="ms-header">
+      <div class="ms-icon stories-color">📸</div>
+      <div class="ms-title">Stories Service</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-lo);margin-bottom:15px">
+      Contenu éphémère (24h) comme WhatsApp/Instagram
+    </div>
+    <div class="ms-responsibilities">
+      <div class="resp-item">Upload et processing de médias</div>
+      <div class="resp-item">Distribution intelligente basée engagement</div>
+      <div class="resp-item">Expiration automatique après 24h</div>
+      <div class="resp-item">View tracking et réactions</div>
+      <div class="resp-item">Archive optionnelle pour utilisateurs</div>
+    </div>
+    <div style="margin-top:15px;padding-top:15px;border-top:1px solid var(--border);">
+      <div style="font-size:10px;color:var(--text-lo);font-family:'JetBrains Mono',monospace">
+        💾 DigitalOcean Spaces · 📨 Kafka Events · 🔍 Redis Cache
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<!-- ═══ 03. SIGNAL PROTOCOL E2E ═══ -->
+<div class="sh"><span class="sh-n">03</span><h2>Signal Protocol — Chiffrement End-to-End</h2><div class="sh-line"></div></div>
+<p class="sh-sub">Processus complet de chiffrement de bout en bout avec Double Ratchet Algorithm.</p>
+
+<div class="diagram-container">
+  <div class="data-flow">
+    
+    <!-- Étape 1 -->
+    <div class="flow-stage">
+      <div class="stage-number">1</div>
+      <div class="stage-content">
+        <div class="stage-title">Initialisation des Clés</div>
+        <div class="stage-details">
+          À l'inscription, chaque utilisateur génère : Identity Key Pair (long terme), Signed PreKey (signée), 
+          batch de 100 PreKeys (usage unique), et Registration ID. Stockage sécurisé dans l'enclave mobile.
+        </div>
+      </div>
+    </div>
+    
+    <!-- Étape 2 -->
+    <div class="flow-stage">
+      <div class="stage-number">2</div>
+      <div class="stage-content">
+        <div class="stage-title">Établissement de Session (X3DH)</div>
+        <div class="stage-details">
+          Alice récupère le PreKey Bundle de Bob → calcule 4 secrets Diffie-Hellman combinés → 
+          génère Root Key et Chain Key. Forward secrecy garantie dès le premier message.
+        </div>
+      </div>
+    </div>
+    
+    <!-- Étape 3 -->
+    <div class="flow-stage">
+      <div class="stage-number">3</div>
+      <div class="stage-content">
+        <div class="stage-title">Double Ratchet Algorithm</div>
+        <div class="stage-details">
+          <strong>Ratchet Symétrique</strong> : Nouvelle clé par message depuis Chain Key<br>
+          <strong>Ratchet DH</strong> : Nouvelle paire de clés éphémères → nouveaux Root/Chain Keys<br>
+          Résultat : Forward Secrecy + Post-Compromise Security
+        </div>
+      </div>
+    </div>
+    
+    <!-- Étape 4 -->
+    <div class="flow-stage">
+      <div class="stage-number">4</div>
+      <div class="stage-content">
+        <div class="stage-title">Chiffrement & Transport</div>
+        <div class="stage-details">
+          Message chiffré avec AES-256-GCM → encapsulé avec metadata Signal → 
+          envoyé via WebSocket TLS 1.3. Le serveur voit uniquement les métadonnées, jamais le contenu.
+        </div>
+      </div>
+    </div>
+    
+    <!-- Étape 5 -->
+    <div class="flow-stage">
+      <div class="stage-number">5</div>
+      <div class="stage-content">
+        <div class="stage-title">Déchiffrement & Authentification</div>
+        <div class="stage-details">
+          Bob reçoit → vérifie MAC → dérive Chain Key → déchiffre avec AES-256-GCM → 
+          vérifie l'authenticité via Identity Key d'Alice. Replay attack protection intégrée.
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Garanties de sécurité -->
+  <div style="margin-top:30px;padding:20px;background:rgba(0,229,255,0.05);border-radius:8px;border:1px solid rgba(0,229,255,0.2)">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px">✅ Garanties Cryptographiques</div>
+        <ul style="font-size:11px;color:var(--text-lo);padding-left:15px;line-height:1.6">
+          <li>Confidentialité (seul le destinataire lit)</li>
+          <li>Intégrité (pas de modification)</li>
+          <li>Authenticité (vérification expéditeur)</li>
+          <li>Forward Secrecy</li>
+          <li>Déni plausible</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px">🛡️ Protection contre Attaques</div>
+        <ul style="font-size:11px;color:var(--text-lo);padding-left:15px;line-height:1.6">
+          <li>MITM (Certificate Pinning)</li>
+          <li>Replay attacks (nonces uniques)</li>
+          <li>Key compromise</li>
+          <li>Denial of Service</li>
+          <li>Traffic analysis</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 04. WEBSOCKET SCALABLE ═══ -->
+<div class="sh"><span class="sh-n">04</span><h2>WebSocket Server — Scalabilité Horizontale</h2><div class="sh-line"></div></div>
+<p class="sh-sub">Architecture multi-instance avec Redis pour coordination et distribution de messages.</p>
+
+<div class="diagram-container">
+  
+  <div style="text-align:center;margin-bottom:25px">
+    <div style="font-size:14px;color:var(--text-hi);font-weight:600">Architecture Multi-Instance WebSocket</div>
+    <div style="font-size:11px;color:var(--text-lo);margin-top:5px">3+ instances avec load balancing et coordination Redis</div>
+  </div>
+  
+  <div style="display:flex;align-items:center;justify-content:center;gap:30px;margin-bottom:25px">
+    <!-- Load Balancer -->
+    <div style="text-align:center">
+      <div style="width:60px;height:60px;background:rgba(251,191,36,0.1);border:2px solid var(--amber);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px">
+        🔁
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-hi)">Load Balancer</div>
+      <div style="font-size:9px;color:var(--text-lo)">Sticky Sessions</div>
+    </div>
+    
+    <!-- Flèche -->
+    <div style="font-size:20px;color:var(--text-lo)">→</div>
+    
+    <!-- WS Instances -->
+    <div style="display:flex;gap:15px">
+      <div style="text-align:center">
+        <div style="width:50px;height:50px;background:rgba(0,229,255,0.1);border:2px solid var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px">
+          ⚡
+        </div>
+        <div style="font-size:10px;color:var(--text-hi)">WS #1</div>
+        <div style="font-size:8px;color:var(--text-lo)">10K connections</div>
+      </div>
+      
+      <div style="text-align:center">
+        <div style="width:50px;height:50px;background:rgba(0,229,255,0.1);border:2px solid var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px">
+          ⚡
+        </div>
+        <div style="font-size:10px;color:var(--text-hi)">WS #2</div>
+        <div style="font-size:8px;color:var(--text-lo)">10K connections</div>
+      </div>
+      
+      <div style="text-align:center">
+        <div style="width:50px;height:50px;background:rgba(0,229,255,0.1);border:2px solid var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px">
+          ⚡
+        </div>
+        <div style="font-size:10px;color:var(--text-hi)">WS #3</div>
+        <div style="font-size:8px;color:var(--text-lo)">10K connections</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Redis Coordination -->
+  <div style="text-align:center;margin:25px 0">
+    <div style="font-size:12px;color:var(--text-lo);margin-bottom:10px">Coordination via Redis Cluster</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:20px">
+      <div style="font-size:11px;color:var(--text-lo);background:var(--bg2);padding:8px 12px;border-radius:6px;border:1px solid var(--border)">
+        session:{userId} → serverId
+      </div>
+      <div style="font-size:11px;color:var(--text-lo)">+</div>
+      <div style="font-size:11px;color:var(--text-lo);background:var(--bg2);padding:8px 12px;border-radius:6px;border:1px solid var(--border)">
+        pub/sub:user:{userId}
+      </div>
+      <div style="font-size:11px;color:var(--text-lo)">+</div>
+      <div style="font-size:11px;color:var(--text-lo);background:var(--bg2);padding:8px 12px;border-radius:6px;border:1px solid var(--border)">
+        pending:{userId}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Message Flow -->
+  <div class="flow-diagram">
+    <div class="flow-step">
+      <div class="step-number">A</div>
+      <div class="step-content">
+        <div class="step-title">Connexion & Authentification</div>
+        <div class="step-desc">
+          Client connecte via WSS → JWT validation → device fingerprint check → 
+          session enregistrée dans Redis (TTL 30s) → heartbeat établi.
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">B</div>
+      <div class="step-content">
+        <div class="step-title">Publication Message</div>
+        <div class="step-desc">
+          Message reçu sur WS instance → publié sur channel Redis <code>user:{recipientId}</code> → 
+          toutes les instances reçoivent → l'instance avec la connexion forwarde via WebSocket.
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">C</div>
+      <div class="step-content">
+        <div class="step-title">Déconnexion & Buffer</div>
+        <div class="step-desc">
+          Heartbeat manquant → session expire dans Redis → messages stockés dans 
+          Redis Streams <code>pending:{userId}</code> (TTL 7 jours, limit 1000 messages).
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">D</div>
+      <div class="step-content">
+        <div class="step-title">Reconnexion & Sync</div>
+        <div class="step-desc">
+          Reconnexion → messages pending récupérés → statuts mis à jour → 
+          re-subscription aux channels → session réactivée dans Redis.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 05. KAFKA EVENT BUS ═══ -->
+<div class="sh"><span class="sh-n">05</span><h2>Kafka — Backbone Événementiel</h2><div class="sh-line"></div></div>
+<p class="sh-sub">3 brokers avec replication factor 3 et exactly-once semantics.</p>
+
+<div class="diagram-container">
+  
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:25px;margin-bottom:25px">
+    
+    <!-- Kafka Cluster -->
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-hi);margin-bottom:15px">Kafka Cluster Topology</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:15px">
+        <div style="text-align:center">
+          <div style="width:45px;height:45px;background:rgba(52,211,153,0.1);border:2px solid var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 5px">
+            📨
+          </div>
+          <div style="font-size:10px;color:var(--text-hi)">Broker 1</div>
+          <div style="font-size:8px;color:var(--text-lo)">Leader</div>
+        </div>
+        
+        <div style="font-size:12px;color:var(--text-lo)">↔️</div>
+        
+        <div style="text-align:center">
+          <div style="width:45px;height:45px;background:rgba(52,211,153,0.1);border:2px solid var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 5px">
+            📨
+          </div>
+          <div style="font-size:10px;color:var(--text-hi)">Broker 2</div>
+          <div style="font-size:8px;color:var(--text-lo)">Follower</div>
+        </div>
+        
+        <div style="font-size:12px;color:var(--text-lo)">↔️</div>
+        
+        <div style="text-align:center">
+          <div style="width:45px;height:45px;background:rgba(52,211,153,0.1);border:2px solid var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 5px">
+            📨
+          </div>
+          <div style="font-size:10px;color:var(--text-hi)">Broker 3</div>
+          <div style="font-size:8px;color:var(--text-lo)">Follower</div>
+        </div>
+      </div>
+      
+      <div style="font-size:11px;color:var(--text-lo);background:var(--bg2);padding:10px;border-radius:6px">
+        <strong>Exactly-Once Semantics</strong><br>
+        • enable.idempotence=true<br>
+        • transactional producers<br>
+        • isolation.level=read_committed<br>
+        • Replication factor = 3
+      </div>
+    </div>
+    
+    <!-- Topics -->
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-hi);margin-bottom:15px">Topics Principaux</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--green)">
+          <div style="font-size:11px;color:var(--text-hi)">user.lifecycle</div>
+          <div style="font-size:10px;color:var(--text-lo)">8 partitions</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--pink)">
+          <div style="font-size:11px;color:var(--text-hi)">chat.messages</div>
+          <div style="font-size:10px;color:var(--text-lo)">12 partitions</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--purple)">
+          <div style="font-size:11px;color:var(--text-hi)">channel.events</div>
+          <div style="font-size:10px;color:var(--text-lo)">8 partitions</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--orange)">
+          <div style="font-size:11px;color:var(--text-hi)">stories.updates</div>
+          <div style="font-size:10px;color:var(--text-lo)">6 partitions</div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Event Flow -->
+  <div style="margin-top:25px">
+    <div style="font-size:13px;font-weight:600;color:var(--text-hi);margin-bottom:15px">Event Flow Example: Nouveau Message</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:var(--bg2);border-radius:8px">
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text-hi)">Chat Service</div>
+        <div style="font-size:10px;color:var(--text-lo)">Produces event</div>
+      </div>
+      <div style="font-size:20px;color:var(--text-lo)">→</div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text-hi)">Kafka Topic</div>
+        <div style="font-size:10px;color:var(--text-lo)">chat.messages</div>
+      </div>
+      <div style="font-size:20px;color:var(--text-lo)">→</div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text-hi)">Notification Service</div>
+        <div style="font-size:10px;color:var(--text-lo)">Consumes → FCM Push</div>
+      </div>
+      <div style="font-size:20px;color:var(--text-lo)">→</div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text-hi)">Analytics Service</div>
+        <div style="font-size:10px;color:var(--text-lo)">Consumes → Metrics</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 06. SÉCURITÉ ZERO TRUST ═══ -->
+<div class="sh"><span class="sh-n">06</span><h2>Zero Trust Security Stack</h2><div class="sh-line"></div></div>
+<p class="sh-sub">Aucune confiance implicite, vérification continue, accès minimal.</p>
+
+<div class="diagram-container">
+  
+  <div class="security-layers">
+    
+    <div class="security-layer">
+      <div class="security-icon">🔐</div>
+      <div class="security-title">mTLS avec SPIFFE</div>
+      <div class="security-desc">
+        Chaque service a une identité SPIFFE unique. mTLS obligatoire entre tous les services. 
+        Certificats auto-rotatés toutes les heures.
+      </div>
+    </div>
+    
+    <div class="security-layer">
+      <div class="security-icon">📋</div>
+      <div class="security-title">OPA Policy Engine</div>
+      <div class="security-desc">
+        Centralized policy decision point. Toutes les autorisations définies en Rego. 
+        Audit trail complet de chaque décision.
+      </div>
+    </div>
+    
+    <div class="security-layer">
+      <div class="security-icon">🎭</div>
+      <div class="security-title">RBAC Granulaire</div>
+      <div class="security-desc">
+        Rôles hiérarchiques (owner, admin, moderator, member). 
+        Permissions configurables par ressource. Least privilege par défaut.
+      </div>
+    </div>
+    
+    <div class="security-layer">
+      <div class="security-icon">📊</div>
+      <div class="security-title">Audit Trail Immutable</div>
+      <div class="security-desc">
+        Toutes les actions critiques loguées avec trace ID, user ID, timestamp. 
+        Stockage immuable dans S3 avec rétention 90 jours.
+      </div>
+    </div>
+    
+    <div class="security-layer">
+      <div class="security-icon">🛡️</div>
+      <div class="security-title">WAF & Rate Limiting</div>
+      <div class="security-desc">
+        Cloudflare WAF pour OWASP Top 10. Rate limiting multi-tier (IP, user, resource). 
+        DDoS protection L3/L4/L7.
+      </div>
+    </div>
+    
+    <div class="security-layer">
+      <div class="security-icon">📱</div>
+      <div class="security-title">Mobile Security</div>
+      <div class="security-desc">
+        Certificate pinning, secure enclave storage, biometric lock, 
+        root/jailbreak detection, code obfuscation.
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Network Security -->
+  <div style="margin-top:30px">
+    <div style="font-size:13px;font-weight:600;color:var(--text-hi);margin-bottom:15px">Network Security — VPC Isolation</div>
+    <div class="network-topology">
+      
+      <div class="network-layer">
+        <div class="network-label">Subnet Edge</div>
+        <div class="network-components">
+          <div class="network-component">Load Balancer</div>
+          <div class="network-component">WAF</div>
+        </div>
+      </div>
+      
+      <div class="network-layer">
+        <div class="network-label">Subnet Gateway</div>
+        <div class="network-components">
+          <div class="network-component">API Gateway</div>
+          <div class="network-component">WebSocket</div>
+          <div class="network-component">Auth Service</div>
+        </div>
+      </div>
+      
+      <div class="network-layer">
+        <div class="network-label">Subnet Services</div>
+        <div class="network-components">
+          <div class="network-component">User Service</div>
+          <div class="network-component">Chat Service</div>
+          <div class="network-component">Channel Service</div>
+          <div class="network-component">Stories Service</div>
+        </div>
+      </div>
+      
+      <div class="network-layer">
+        <div class="network-label">Subnet Data</div>
+        <div class="network-components">
+          <div class="network-component">MongoDB Clusters</div>
+          <div class="network-component">Redis Cluster</div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 07. COMPONENTS OVERVIEW ═══ -->
+<div class="sh"><span class="sh-n">07</span><h2>Stack Technologique Complète</h2><div class="sh-line"></div></div>
+<p class="sh-sub">Tous les composants techniques avec leurs rôles spécifiques.</p>
+
+<div class="component-diagram">
+  
+  <div class="component">
+    <div class="comp-icon">🐍</div>
+    <div class="comp-name">FastAPI</div>
+    <div class="comp-role">Framework Python pour microservices. Async, OpenAPI 3, validation automatique.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">📱</div>
+    <div class="comp-name">Flutter</div>
+    <div class="comp-role">Application mobile cross-platform. Clean Architecture avec Riverpod.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">📨</div>
+    <div class="comp-name">Apache Kafka</div>
+    <div class="comp-role">Event streaming platform. Exactly-once semantics, 3 brokers cluster.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">🔴</div>
+    <div class="comp-name">Redis Cluster</div>
+    <div class="comp-role">In-memory data store. Pub/Sub, caching, sessions. 6 nodes sharded.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">🍃</div>
+    <div class="comp-name">MongoDB</div>
+    <div class="comp-role">Document database. 4 replica sets (1 per service). Sharding ready.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">🌊</div>
+    <div class="comp-name">DigitalOcean</div>
+    <div class="comp-role">Cloud provider. VPC, Kubernetes, managed databases, spaces S3.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">🛡️</div>
+    <div class="comp-name">SPIFFE/SPIRE</div>
+    <div class="comp-role">Service identity framework. mTLS avec identités cryptographiques.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">📋</div>
+    <div class="comp-name">Open Policy Agent</div>
+    <div class="comp-role">Policy engine unified. Définition centralisée des politiques d'accès.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">📊</div>
+    <div class="comp-name">Prometheus</div>
+    <div class="comp-role">Monitoring & alerting. Métriques temps réel, SLO tracking.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">🔍</div>
+    <div class="comp-name">Jaeger</div>
+    <div class="comp-role">Distributed tracing. End-to-end request tracking, performance analysis.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">📝</div>
+    <div class="comp-name">ELK Stack</div>
+    <div class="comp-role">Log management. Centralized logging, searching, visualization.</div>
+  </div>
+  
+  <div class="component">
+    <div class="comp-icon">🚀</div>
+    <div class="comp-name">GitLab CI/CD</div>
+    <div class="comp-role">Continuous integration/deployment. Automated testing, security scanning.</div>
+  </div>
+  
+</div>
+
+<!-- ═══ 08. DATA FLOW COMPLETE ═══ -->
+<div class="sh"><span class="sh-n">08</span><h2>Data Flow — Message Delivery</h2><div class="sh-line"></div></div>
+<p class="sh-sub">Chemin complet d'un message depuis l'envoi jusqu'à la réception.</p>
+
+<div class="diagram-container">
+  
+  <div class="flow-diagram">
+    
+    <div class="flow-step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Client A envoie Message</div>
+        <div class="step-desc">
+          Flutter app → chiffre avec Signal Protocol (Double Ratchet) → ajoute clientMsgId → 
+          envoie via WebSocket TLS 1.3 → attend ACK du serveur.
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">WebSocket Server Processing</div>
+        <div class="step-desc">
+          Validation JWT → vérification permissions (OPA) → publication Kafka <code>chat.messages</code> → 
+          ACK envoyé au client → publication Redis Pub/Sub pour livraison temps réel.
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Chat Service Persistence</div>
+        <div class="step-desc">
+          Consume Kafka event → stocke message chiffré dans MongoDB → 
+          met à jour last message timestamp → publie event <code>message.sent</code>.
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Real-time Delivery</div>
+        <div class="step-desc">
+          Si Client B est connecté : Redis Pub/Sub → WebSocket Server → forward via WebSocket.<br>
+          Si déconnecté : message stocké dans Redis Streams <code>pending:{userId}</code>.
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">5</div>
+      <div class="step-content">
+        <div class="step-title">Notification Push</div>
+        <div class="step-desc">
+          Notification Service consume Kafka → envoie FCM/APNs push → 
+          Client B reçoit notification même si app en background.
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <div class="step-number">6</div>
+      <div class="step-content">
+        <div class="step-title">Status Updates</div>
+        <div class="step-desc">
+          Client B ouvre message → send read receipt → Status Service update MongoDB → 
+          publie event → Client A reçoit update via Redis Pub/Sub.
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Guarantees -->
+  <div style="margin-top:25px;padding:15px;background:rgba(52,211,153,0.05);border-radius:8px;border:1px solid rgba(52,211,153,0.2)">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:5px">✅ Exactly-Once Delivery</div>
+        <div style="font-size:10px;color:var(--text-lo)">Pas de duplication même en cas de crash</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:5px">⚡ Low Latency</div>
+        <div style="font-size:10px;color:var(--text-lo)">&lt; 50ms P95 pour messages temps réel</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:5px">📊 Full Audit Trail</div>
+        <div style="font-size:10px;color:var(--text-lo)">Trace ID pour tracking end-to-end</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center;padding:40px 0 60px">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-lo);margin-bottom:15px">
+    UHURU v2.2 — Architecture Schematics — © 2024
+  </div>
+  <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+    <div style="font-size:9px;color:var(--text-lo);padding:5px 10px;background:var(--bg1);border-radius:4px">
+      🏗️ 8-Layer Architecture
+    </div>
+    <div style="font-size:9px;color:var(--text-lo);padding:5px 10px;background:var(--bg1);border-radius:4px">
+      🔐 Signal Protocol E2E
+    </div>
+    <div style="font-size:9px;color:var(--text-lo);padding:5px 10px;background:var(--bg1);border-radius:4px">
+      ⚡ WebSocket Scalable
+    </div>
+    <div style="font-size:9px;color:var(--text-lo);padding:5px 10px;background:var(--bg1);border-radius:4px">
+      🛡️ Zero Trust Security
+    </div>
+    <div style="font-size:9px;color:var(--text-lo);padding:5px 10px;background:var(--bg1);border-radius:4px">
+      📊 Event-Driven Design
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// Animation on scroll
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, observerOptions);
+
+// Animate diagram elements
+document.querySelectorAll('.arch-layer, .flow-step, .ms-card, .security-layer, .component, .flow-stage')
+  .forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+  });
+
+// Add floating animation to some elements
+const floatElements = document.querySelectorAll('.layer-node, .network-component, .comp-icon');
+floatElements.forEach((el, index) => {
+  el.classList.add('float');
+  el.style.animationDelay = `${index * 0.1}s`;
+});
+</script>
+</body>
+</html>
